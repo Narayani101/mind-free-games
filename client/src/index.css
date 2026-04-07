@@ -32,3 +32,22 @@ html.dark .portal-header {
   @apply border-slate-700 bg-gradient-to-r from-[#1E293B] to-[#0F172A];
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
 }
+
+/* Horizontal nav: no visible scrollbar, smooth touch scroll */
+@layer utilities {
+  .nav-scroll-x {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: pan-x;
+  }
+  .nav-scroll-x::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
