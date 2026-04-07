@@ -1,0 +1,82 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { PlayfulButton } from '@/components/ui/PlayfulButton';
+
+export function Register() {
+  const { register } = useAuth();
+  const nav = useNavigate();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    setPending(true);
+    try {
+      await register(name.trim() || 'Player', email, password);
+      nav('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-md rounded-card border-2 border-slate-200 bg-white/90 p-8 shadow-lift backdrop-blur-sm">
+      <h1 className="text-2xl font-extrabold text-slate-800">Create account</h1>
+      <p className="mt-2 text-sm font-medium text-slate-600">
+        Already have one?{' '}
+        <Link to="/login" className="font-bold text-[#5DADE2] underline">
+          Log in
+        </Link>
+      </p>
+      <form onSubmit={onSubmit} className="mt-8 space-y-4">
+        <div>
+          <label className="block text-sm font-bold text-slate-700">Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 outline-none focus:border-[#7ED957]"
+            placeholder="Display name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-slate-700">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 outline-none focus:border-[#5DADE2]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-slate-700">Password (6+ characters)</label>
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 outline-none focus:border-[#FFD93D]"
+          />
+        </div>
+        {error && <p className="text-sm font-bold text-red-600">{error}</p>}
+        <PlayfulButton type="submit" className="w-full" disabled={pending} variant="primary">
+          <UserPlus className="h-5 w-5" />
+          {pending ? 'Creating…' : 'Sign up'}
+        </PlayfulButton>
+      </form>
+    </div>
+  );
+}

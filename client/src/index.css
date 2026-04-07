@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply min-h-screen font-sans antialiased transition-colors duration-300;
+  @apply text-slate-800;
+  background: linear-gradient(135deg, #f8f9ff, #e8f7ff);
+  background-attachment: fixed;
+}
+
+html.dark body {
+  @apply bg-[#0F172A] text-[#E2E8F0];
+  background-image: none;
+}
+
+.game-canvas {
+  touch-action: none;
+}
+
+/* Portal chrome */
+.portal-header {
+  @apply border-b-2 border-slate-200/90 bg-gradient-to-r from-white/95 via-[#F0F7FF]/95 to-[#FFF5F5]/95 backdrop-blur-md;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+html.dark .portal-header {
+  @apply border-slate-700 bg-gradient-to-r from-[#1E293B] to-[#0F172A];
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
