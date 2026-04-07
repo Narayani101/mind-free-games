@@ -75,7 +75,13 @@ export function GamesHub({ mode }: { mode: HubMode }) {
 
       {err && (
         <div className="mx-auto mb-3 max-w-xl shrink-0 rounded-[18px] border-2 border-red-300 bg-gradient-to-r from-[#FFE8E8] to-[#FFD6A5] px-4 py-3 text-center text-sm font-bold text-red-800 dark:border-red-800 dark:from-red-950 dark:to-slate-900 dark:text-red-200">
-          {err} — run <code className="rounded bg-white/80 px-1 dark:bg-slate-800">npm run dev</code>
+          {err}
+          {import.meta.env.DEV && (
+            <>
+              {' '}
+              — run <code className="rounded bg-white/80 px-1 dark:bg-slate-800">npm run dev</code>
+            </>
+          )}
         </div>
       )}
 

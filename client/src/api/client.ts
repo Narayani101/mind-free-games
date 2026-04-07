@@ -1,5 +1,5 @@
-/** Production: set VITE_API_ORIGIN to your Render URL (e.g. https://your-api.onrender.com), no trailing slash. */
-const origin = "https://mind-free-games.onrender.com/";
+/** Production: VITE_API_ORIGIN (e.g. https://your-api.onrender.com). Trailing slashes are stripped — avoid //api URLs (Render 404s). */
+const origin = (import.meta.env.VITE_API_ORIGIN as string | undefined)?.replace(/\/$/, '') ?? '';
 const API = origin ? `${origin}/api` : '/api';
 
 export async function api<T>(
