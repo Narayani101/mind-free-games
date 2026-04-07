@@ -27,8 +27,9 @@ jobs:
       - name: Build client
         run: npm run build -w client
         env:
-          VITE_API_ORIGIN: ${{ vars.VITE_API_ORIGIN }}
-          # Project site: https://<user>.github.io/mind-free-games/ — override in repo Variables if needed
+          # Override with repo Variable VITE_API_ORIGIN if the API moves
+          VITE_API_ORIGIN: ${{ vars.VITE_API_ORIGIN || 'https://mind-free-games.onrender.com' }}
+          # Project site: https://<user>.github.io/mind-free-games/ — override with repo Variable if needed
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/mind-free-games/' }}
       - name: SPA fallback (direct URLs / refresh on GitHub Pages)
         run: cp client/dist/index.html client/dist/404.html
