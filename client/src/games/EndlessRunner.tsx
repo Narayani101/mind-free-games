@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { GameShell } from '@/components/GameShell';
+import { JumpButton } from '@/components/MobileGameControls';
 import { useGameSession } from '@/hooks/useGameSession';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
@@ -74,19 +75,23 @@ export default function EndlessRunnerGame() {
     reset();
   }, [reset]);
 
+  const doJump = useCallback(() => {
+    if (game.current.grounded && game.current.alive) {
+      game.current.vy = -12;
+      game.current.grounded = false;
+    }
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        if (game.current.grounded && game.current.alive) {
-          game.current.vy = -12;
-          game.current.grounded = false;
-        }
+        doJump();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [doJump]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -183,16 +188,28 @@ export default function EndlessRunnerGame() {
           : undefined
       }
     >
-      <p className="mb-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400">
-        Space to jump. Avoid the orange blocks.
+      <p className="mb-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
+        Space, tap game, or Jump — avoid orange blocks.
       </p>
       <motion.div
         animate={flash ? { x: [-5, 5, -5, 5, 0] } : {}}
         transition={{ duration: 0.18 }}
         className={`mx-auto w-full max-w-lg rounded-2xl border-2 ${flash ? 'border-red-400' : 'border-slate-200 dark:border-slate-600'}`}
       >
-        <canvas ref={canvasRef} width={480} height={280} className="w-full max-w-full rounded-xl" />
+        <canvas
+          ref={canvasRef}
+          width={480}
+          height={280}
+          role="application"
+          aria-label="Runner — tap to jump"
+          className="game-canvas w-full max-w-full touch-manipulation rounded-xl"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            doJump();
+          }}
+        />
       </motion.div>
+      <JumpButton onJump={doJump} className="mt-3 md:hidden" />
     </GameShell>
   );
 }

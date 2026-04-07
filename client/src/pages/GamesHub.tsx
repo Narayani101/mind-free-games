@@ -63,7 +63,7 @@ export function GamesHub({ mode }: { mode: HubMode }) {
   return (
     <div
       className={`flex h-full min-h-0 flex-1 flex-col overflow-x-hidden px-2 pb-3 pt-2 min-[380px]:px-3 min-[380px]:pb-4 min-[380px]:pt-3 sm:px-5 ${
-        allowScroll ? 'overflow-y-auto' : 'overflow-hidden'
+        allowScroll ? 'safe-pb overflow-y-auto' : 'overflow-hidden'
       }`}
     >
       <header className="shrink-0 px-1 py-2 text-center sm:py-3">

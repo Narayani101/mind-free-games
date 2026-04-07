@@ -125,7 +125,7 @@ export function Layout() {
         </div>
       )}
       <div className="flex min-h-[100dvh] flex-col">
-        <header className="portal-header sticky top-0 z-40 shrink-0">
+        <header className="portal-header safe-pt sticky top-0 z-40 shrink-0">
           <div className="mx-auto max-w-[1400px] px-3 py-2 sm:px-4 lg:px-6">
             {/* Mobile / narrow: full-width invisible-scroll nav row under logo + actions */}
             <div className="flex flex-col gap-2 sm:hidden">
@@ -273,7 +273,7 @@ export function Layout() {
           <Outlet />
         </main>
         {!isHub && (
-          <footer className="shrink-0 border-t-2 border-slate-200/80 py-4 text-center text-xs font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <footer className="safe-pb shrink-0 border-t-2 border-slate-200/80 py-4 text-center text-xs font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
             {BRAND_NAME} · Play free · Save scores when you sign in
           </footer>
         )}

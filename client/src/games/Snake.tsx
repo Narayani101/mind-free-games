@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { GameShell } from '@/components/GameShell';
+import { DirectionPad } from '@/components/MobileGameControls';
 import { useGameSession } from '@/hooks/useGameSession';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
 
@@ -37,17 +38,23 @@ export default function SnakeGame() {
     if (g?.difficulty) setDifficulty(g.difficulty as 'easy' | 'normal' | 'hard');
   }, [loadGuestState]);
 
+  const bumpDir = useCallback((dx: number, dy: number) => {
+    if (dx === 0 && dy === -1 && dir.current.y === 0) nextDir.current = { x: 0, y: -1 };
+    if (dx === 0 && dy === 1 && dir.current.y === 0) nextDir.current = { x: 0, y: 1 };
+    if (dx === -1 && dy === 0 && dir.current.x === 0) nextDir.current = { x: -1, y: 0 };
+    if (dx === 1 && dy === 0 && dir.current.x === 0) nextDir.current = { x: 1, y: 0 };
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const k = e.key;
-      if (k === 'ArrowUp' && dir.current.y === 0) nextDir.current = { x: 0, y: -1 };
-      if (k === 'ArrowDown' && dir.current.y === 0) nextDir.current = { x: 0, y: 1 };
-      if (k === 'ArrowLeft' && dir.current.x === 0) nextDir.current = { x: -1, y: 0 };
-      if (k === 'ArrowRight' && dir.current.x === 0) nextDir.current = { x: 1, y: 0 };
+      if (e.key === 'ArrowUp') bumpDir(0, -1);
+      if (e.key === 'ArrowDown') bumpDir(0, 1);
+      if (e.key === 'ArrowLeft') bumpDir(-1, 0);
+      if (e.key === 'ArrowRight') bumpDir(1, 0);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [bumpDir]);
 
   useEffect(() => {
     if (!running || gameOver) return;
@@ -129,11 +136,11 @@ export default function SnakeGame() {
           : undefined
       }
     >
-      <p className="mb-4 text-center text-sm font-medium text-slate-600 dark:text-slate-400">
-        Arrows to steer. {isLoggedIn ? 'Scores sync to your account.' : ''}
+      <p className="mb-3 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:mb-4 sm:text-sm">
+        Arrows or pad to steer. {isLoggedIn ? 'Scores sync to your account.' : ''}
       </p>
       <div
-        className="mx-auto grid w-fit gap-px rounded-playful border-2 border-emerald-800/30 bg-emerald-900/20 p-1 shadow-inner dark:border-emerald-500/30"
+        className="mx-auto grid w-fit max-w-[100vw] gap-px overflow-x-auto rounded-playful border-2 border-emerald-800/30 bg-emerald-900/20 p-1 shadow-inner dark:border-emerald-500/30"
         style={{
           gridTemplateColumns: `repeat(${SIZE}, minmax(0, 1fr))`,
           backgroundImage:
@@ -151,9 +158,10 @@ export default function SnakeGame() {
           if (isFood) bg = 'bg-[#e11d48] ring-1 ring-white/80 dark:ring-rose-300';
           else if (isHead) bg = 'bg-[#059669] ring-1 ring-emerald-200 dark:ring-emerald-400';
           else if (isBody) bg = 'bg-[#34d399]';
-          return <div key={i} className={`h-3 w-3 sm:h-4 sm:w-4 ${bg}`} />;
+          return <div key={i} className={`h-2.5 w-2.5 min-[380px]:h-3 min-[380px]:w-3 sm:h-4 sm:w-4 ${bg}`} />;
         })}
       </div>
+      <DirectionPad onDir={bumpDir} className="mt-4 md:hidden" />
     </GameShell>
   );
 }

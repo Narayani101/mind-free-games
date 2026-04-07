@@ -27,7 +27,7 @@ export function Login() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-card border-2 border-slate-200 bg-white/90 p-8 shadow-lift backdrop-blur-sm">
+    <div className="safe-pb mx-auto w-full max-w-md rounded-card border-2 border-slate-200 bg-white/90 p-5 shadow-lift backdrop-blur-sm min-[400px]:p-8">
       <h1 className="text-2xl font-extrabold text-slate-800">Log in</h1>
       <p className="mt-2 text-sm font-medium text-slate-600">
         No account?{' '}
@@ -43,7 +43,9 @@ export function Login() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 outline-none focus:border-[#5DADE2]"
+            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 text-base font-medium text-slate-800 outline-none focus:border-[#5DADE2]"
+            autoComplete="email"
+            inputMode="email"
           />
         </div>
         <div>
@@ -53,7 +55,8 @@ export function Login() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 outline-none focus:border-[#FFD93D]"
+            className="mt-1 w-full rounded-playful border-2 border-slate-200 bg-white px-4 py-3 text-base font-medium text-slate-800 outline-none focus:border-[#FFD93D]"
+            autoComplete="current-password"
           />
         </div>
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}

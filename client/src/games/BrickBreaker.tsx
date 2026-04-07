@@ -123,15 +123,47 @@ export default function BrickBreakerGame() {
   }, [reportScore, saveState, syncScore, reset]);
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const setFromClientX = (clientX: number) => {
       const r = canvas.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
+      const x = (clientX - r.left) / r.width;
       game.current.paddle = Math.min(0.78, Math.max(0.02, x - 0.1));
     };
-    window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
+    const onPointerDown = (e: PointerEvent) => {
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      setFromClientX(e.clientX);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (canvas.hasPointerCapture(e.pointerId)) setFromClientX(e.clientX);
+    };
+    const onPointerUp = (ev: PointerEvent) => {
+      try {
+        canvas.releasePointerCapture(ev.pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if ((e.buttons & 1) === 0) return;
+      setFromClientX(e.clientX);
+    };
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('mousemove', onMouseMove);
+    return () => {
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('mousemove', onMouseMove);
+    };
   }, []);
 
   return (
@@ -171,14 +203,14 @@ export default function BrickBreakerGame() {
             : undefined
       }
     >
-      <p className="mb-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400">
-        Move the mouse to steer the paddle.
+      <p className="mb-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
+        Drag on the game (or move the mouse) to steer the paddle.
       </p>
       <canvas
         ref={canvasRef}
         width={480}
         height={360}
-        className="game-canvas mx-auto w-full max-w-lg rounded-xl border-2 border-slate-200 bg-slate-950 dark:border-slate-600"
+        className="game-canvas mx-auto w-full max-w-lg touch-none rounded-xl border-2 border-slate-200 bg-slate-950 dark:border-slate-600"
       />
     </GameShell>
   );

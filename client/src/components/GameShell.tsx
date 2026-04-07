@@ -58,7 +58,7 @@ export function GameShell({
     '[&:fullscreen]:bg-gradient-to-br [&:fullscreen]:from-white [&:fullscreen]:via-[#F7F8FC] [&:fullscreen]:to-[#EAF2F8] dark:[&:fullscreen]:from-[#1E293B] dark:[&:fullscreen]:via-[#1E293B] dark:[&:fullscreen]:to-[#0F172A]';
 
   return (
-    <div className="flex min-h-0 w-full max-w-4xl flex-1 flex-col items-center gap-3 overflow-hidden self-center">
+    <div className="safe-pb flex min-h-0 w-full max-w-4xl flex-1 flex-col items-center gap-3 overflow-hidden self-center">
       <div className="flex w-full shrink-0 flex-nowrap items-center justify-between gap-2">
         <Link
           to="/"

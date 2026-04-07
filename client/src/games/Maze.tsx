@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GameShell } from '@/components/GameShell';
+import { DirectionPad } from '@/components/MobileGameControls';
 import { useGameSession } from '@/hooks/useGameSession';
 
 const GAME_ID = 'maze';
@@ -50,17 +51,11 @@ export default function MazeGame() {
     setSteps(0);
   }, [size, maze]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
-      e.preventDefault();
+  const moveBy = useCallback(
+    (dx: number, dy: number) => {
       setPos((p) => {
-        let nx = p.x;
-        let ny = p.y;
-        if (e.key === 'ArrowUp') ny -= 1;
-        if (e.key === 'ArrowDown') ny += 1;
-        if (e.key === 'ArrowLeft') nx -= 1;
-        if (e.key === 'ArrowRight') nx += 1;
+        const nx = p.x + dx;
+        const ny = p.y + dy;
         if (ny < 0 || nx < 0 || ny >= size || nx >= size) return p;
         if (maze[ny][nx] === 1) return p;
         setSteps((s) => {
@@ -77,10 +72,22 @@ export default function MazeGame() {
         });
         return { x: nx, y: ny };
       });
+    },
+    [maze, size, goal.x, goal.y, reportScore, saveState]
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      e.preventDefault();
+      if (e.key === 'ArrowUp') moveBy(0, -1);
+      if (e.key === 'ArrowDown') moveBy(0, 1);
+      if (e.key === 'ArrowLeft') moveBy(-1, 0);
+      if (e.key === 'ArrowRight') moveBy(1, 0);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [maze, size, goal.x, goal.y, reportScore, saveState]);
+  }, [moveBy]);
 
   const reset = useCallback(() => {
     setPos({ x: 1, y: 1 });
@@ -111,10 +118,12 @@ export default function MazeGame() {
         </div>
       }
     >
-      <p className="mb-4 text-sm text-zinc-500">Reach the gold cell. Use arrow keys.</p>
+      <p className="mb-3 text-center text-xs text-zinc-500 sm:mb-4 sm:text-left sm:text-sm">
+        Reach the gold cell. Arrows or pad.
+      </p>
       <div
-        className="mx-auto inline-grid gap-px border border-white/20 bg-white/10 p-1"
-        style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 10px))` }}
+        className="mx-auto inline-grid max-w-[100vw] gap-px overflow-x-auto border border-white/20 bg-white/10 p-1"
+        style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 8px))` }}
       >
         {maze.flatMap((row, y) =>
           row.map((cell, x) => {
@@ -123,10 +132,16 @@ export default function MazeGame() {
             let bg = cell === 1 ? 'bg-zinc-800' : 'bg-zinc-950';
             if (isPlayer) bg = 'bg-cyan-400';
             if (isGoal) bg = 'bg-amber-400';
-            return <div key={`${x}-${y}`} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${bg}`} />;
+            return (
+              <div key={`${x}-${y}`} className={`h-2 w-2 min-[400px]:h-2.5 min-[400px]:w-2.5 sm:h-3 sm:w-3 ${bg}`} />
+            );
           })
         )}
       </div>
+      <DirectionPad
+        onDir={(dx, dy) => moveBy(dx, dy)}
+        className="mt-4 text-slate-800 dark:text-slate-100 md:hidden"
+      />
     </GameShell>
   );
 }

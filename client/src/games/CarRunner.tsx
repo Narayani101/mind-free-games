@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { GameShell } from '@/components/GameShell';
 import { GameResultModal } from '@/components/GameResultModal';
+import { LaneNudge } from '@/components/MobileGameControls';
 import { useGameSession } from '@/hooks/useGameSession';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
@@ -79,15 +80,24 @@ export default function CarRunnerGame() {
     reset();
   }, [reset]);
 
+  const nudgeLeft = useCallback(() => {
+    if (!game.current.alive) return;
+    game.current.lane = Math.max(0, game.current.lane - 1);
+  }, []);
+  const nudgeRight = useCallback(() => {
+    if (!game.current.alive) return;
+    game.current.lane = Math.min(LANES - 1, game.current.lane + 1);
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!game.current.alive) return;
-      if (e.key === 'ArrowLeft') game.current.lane = Math.max(0, game.current.lane - 1);
-      if (e.key === 'ArrowRight') game.current.lane = Math.min(LANES - 1, game.current.lane + 1);
+      if (e.key === 'ArrowLeft') nudgeLeft();
+      if (e.key === 'ArrowRight') nudgeRight();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [nudgeLeft, nudgeRight]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -182,8 +192,7 @@ export default function CarRunnerGame() {
       }
     >
       <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
-        Left / Right arrows — dodge red cars. Three crashes end the run. A crash flashes red and pauses with a
-        quick warning.
+        Arrows or lane buttons — dodge red cars. Three crashes end the run.
       </p>
       <motion.div
         animate={flash ? { x: [-6, 6, -6, 6, 0] } : {}}
@@ -194,9 +203,10 @@ export default function CarRunnerGame() {
           ref={canvasRef}
           width={420}
           height={320}
-          className="w-full max-w-full rounded-xl"
+          className="game-canvas w-full max-w-full touch-none rounded-xl"
         />
       </motion.div>
+      <LaneNudge onLeft={nudgeLeft} onRight={nudgeRight} className="mt-3 md:hidden" />
       {!over && (
         <GameResultModal
           open={warnOpen}
