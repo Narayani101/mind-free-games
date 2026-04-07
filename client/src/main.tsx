@@ -7,9 +7,12 @@ import { ThemeProvider } from './context/ThemeContext';
 import App from './App';
 import './index.css';
 
+const base = import.meta.env.BASE_URL;
+const routerBasename = base === '/' ? undefined : base.replace(/\/$/, '');
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <ThemeProvider>
         <AuthProvider>
           <RecentGamesProvider>
