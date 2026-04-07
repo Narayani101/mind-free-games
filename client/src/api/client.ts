@@ -1,4 +1,6 @@
-const API = '/api';
+/** Production: set VITE_API_ORIGIN to your Render URL (e.g. https://your-api.onrender.com), no trailing slash. */
+const origin = (import.meta.env.VITE_API_ORIGIN as string | undefined)?.replace(/\/$/, '') ?? '';
+const API = origin ? `${origin}/api` : '/api';
 
 export async function api<T>(
   path: string,
