@@ -4,11 +4,91 @@ import { GameShell } from '@/components/GameShell';
 import { DirectionPad } from '@/components/MobileGameControls';
 import { useGameSession } from '@/hooks/useGameSession';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
+import { poki } from '@/theme/pokiGameTheme';
+import { useGameFullscreen } from '@/context/GameFullscreenContext';
 
 const SIZE = 20;
 const GAME_ID = 'snake';
 
 type Pt = { x: number; y: number };
+
+function SnakeBoard({
+  snake,
+  food,
+  bumpDir,
+  isLoggedIn,
+}: {
+  snake: Pt[];
+  food: Pt;
+  bumpDir: (dx: number, dy: number) => void;
+  isLoggedIn: boolean;
+}) {
+  const fullscreen = useGameFullscreen();
+  return (
+    <div
+      className={
+        fullscreen
+          ? 'flex min-h-0 w-full flex-1 flex-col items-center justify-between gap-2'
+          : 'flex w-full flex-col items-center'
+      }
+    >
+      {!fullscreen && (
+        <p className="mb-3 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:mb-4 sm:text-sm">
+          Arrows or pad to steer. {isLoggedIn ? 'Scores sync to your account.' : ''}
+        </p>
+      )}
+      <div
+        className={`grid gap-0.5 rounded-[22px] border-2 border-emerald-600/25 bg-gradient-to-br from-emerald-950/20 via-teal-900/15 to-sky-900/20 p-2 shadow-[0_16px_40px_rgba(16,185,129,0.12)] dark:border-emerald-500/30 ${
+          fullscreen
+            ? 'mx-auto min-h-0 w-full max-w-full shrink overflow-hidden'
+            : 'mx-auto w-fit max-w-[100vw] overflow-x-auto'
+        }`}
+        style={{
+          gridTemplateColumns: `repeat(${SIZE}, minmax(0, 1fr))`,
+          ...(fullscreen
+            ? {
+                gridTemplateRows: `repeat(${SIZE}, minmax(0, 1fr))`,
+                width: 'min(96vmin, calc(100dvh - 10.5rem), calc(100vw - 1.25rem))',
+                height: 'min(96vmin, calc(100dvh - 10.5rem), calc(100vw - 1.25rem))',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                flex: '1 1 auto',
+                minHeight: 0,
+              }
+            : {}),
+        }}
+      >
+        {Array.from({ length: SIZE * SIZE }).map((_, i) => {
+          const x = i % SIZE;
+          const y = Math.floor(i / SIZE);
+          const isHead = snake[0]?.x === x && snake[0]?.y === y;
+          const isBody = snake.some((s, idx) => idx > 0 && s.x === x && s.y === y);
+          const isFood = food.x === x && food.y === y;
+          let cellClass =
+            'rounded-full shadow-[inset_0_-2px_4px_rgba(0,0,0,0.15)] ring-1 ring-white/25 dark:ring-white/10';
+          let bg = 'bg-gradient-to-br from-emerald-100 to-emerald-300 dark:from-emerald-900 dark:to-emerald-950';
+          if (isFood)
+            bg =
+              'bg-gradient-to-br from-rose-300 to-rose-600 shadow-[0_0_12px_rgba(244,63,94,0.55)] ring-2 ring-amber-200';
+          else if (isHead)
+            bg = 'bg-gradient-to-br from-emerald-400 to-emerald-700 ring-2 ring-lime-200 dark:ring-emerald-400';
+          else if (isBody) bg = 'bg-gradient-to-br from-teal-300 to-emerald-500 dark:from-emerald-700 dark:to-emerald-900';
+          return (
+            <div
+              key={i}
+              className={
+                fullscreen
+                  ? `min-h-0 min-w-0 aspect-square h-full w-full max-h-full max-w-full ${cellClass} ${bg}`
+                  : `h-2.5 w-2.5 min-[380px]:h-3 min-[380px]:w-3 sm:h-4 sm:w-4 ${cellClass} ${bg}`
+              }
+            />
+          );
+        })}
+      </div>
+      <DirectionPad onDir={bumpDir} className={`md:hidden ${fullscreen ? 'mt-2 shrink-0' : 'mt-4'}`} />
+    </div>
+  );
+}
 
 export default function SnakeGame() {
   const { saveState, loadGuestState, reportScore, isLoggedIn } = useGameSession(GAME_ID);
@@ -101,11 +181,16 @@ export default function SnakeGame() {
     <GameShell
       gameId={GAME_ID}
       title="Snake"
+      hud={
+        <>
+          <span className={poki.hudStat}>
+            Score <span className="font-mono text-[#FF8A65]">{score}</span>
+          </span>
+          <span className={poki.hudStat}>{running ? 'Playing' : 'Ready'}</span>
+        </>
+      }
       actions={
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            Score: <span className="font-mono text-[#FF8A65]">{score}</span>
-          </span>
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
@@ -136,32 +221,7 @@ export default function SnakeGame() {
           : undefined
       }
     >
-      <p className="mb-3 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:mb-4 sm:text-sm">
-        Arrows or pad to steer. {isLoggedIn ? 'Scores sync to your account.' : ''}
-      </p>
-      <div
-        className="mx-auto grid w-fit max-w-[100vw] gap-px overflow-x-auto rounded-playful border-2 border-emerald-800/30 bg-emerald-900/20 p-1 shadow-inner dark:border-emerald-500/30"
-        style={{
-          gridTemplateColumns: `repeat(${SIZE}, minmax(0, 1fr))`,
-          backgroundImage:
-            'linear-gradient(to right, rgba(16,185,129,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(16,185,129,0.15) 1px, transparent 1px)',
-          backgroundSize: `calc(100% / ${SIZE}) 100%, 100% calc(100% / ${SIZE})`,
-        }}
-      >
-        {Array.from({ length: SIZE * SIZE }).map((_, i) => {
-          const x = i % SIZE;
-          const y = Math.floor(i / SIZE);
-          const isHead = snake[0]?.x === x && snake[0]?.y === y;
-          const isBody = snake.some((s, idx) => idx > 0 && s.x === x && s.y === y);
-          const isFood = food.x === x && food.y === y;
-          let bg = 'bg-[#ecfdf5] dark:bg-[#064e3b]';
-          if (isFood) bg = 'bg-[#e11d48] ring-1 ring-white/80 dark:ring-rose-300';
-          else if (isHead) bg = 'bg-[#059669] ring-1 ring-emerald-200 dark:ring-emerald-400';
-          else if (isBody) bg = 'bg-[#34d399]';
-          return <div key={i} className={`h-2.5 w-2.5 min-[380px]:h-3 min-[380px]:w-3 sm:h-4 sm:w-4 ${bg}`} />;
-        })}
-      </div>
-      <DirectionPad onDir={bumpDir} className="mt-4 md:hidden" />
+      <SnakeBoard snake={snake} food={food} bumpDir={bumpDir} isLoggedIn={isLoggedIn} />
     </GameShell>
   );
 }

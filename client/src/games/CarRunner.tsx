@@ -7,41 +7,13 @@ import { useGameSession } from '@/hooks/useGameSession';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
 import { RotateCcw } from 'lucide-react';
+import { drawRoadScene, drawStylizedCar } from '@/games/canvas/pokiCanvasDraw';
+import { confettiSpark } from '@/utils/gameFx';
+import { poki } from '@/theme/pokiGameTheme';
 
 const GAME_ID = 'car-runner';
 const LANES = 3;
 const MAX_CRASHES = 3;
-
-function drawPlayerCar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
-  ctx.fillStyle = '#facc15';
-  ctx.beginPath();
-  ctx.moveTo(x + 6, y + h * 0.55);
-  ctx.lineTo(x + w * 0.2, y + h * 0.35);
-  ctx.lineTo(x + w * 0.82, y + h * 0.35);
-  ctx.lineTo(x + w - 6, y + h * 0.55);
-  ctx.lineTo(x + w - 4, y + h - 8);
-  ctx.lineTo(x + 4, y + h - 8);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#ca8a04';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(x + 8, y + h * 0.42, w - 16, h * 0.22);
-  ctx.fillStyle = '#0f172a';
-  ctx.fillRect(x + 5, y + h - 10, 10, 10);
-  ctx.fillRect(x + w - 15, y + h - 10, 10, 10);
-}
-
-function drawEnemyCar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
-  ctx.fillStyle = '#ef4444';
-  ctx.fillRect(x + 4, y + 8, w - 8, h - 12);
-  ctx.fillStyle = '#7f1d1d';
-  ctx.fillRect(x + 8, y + 14, w - 16, h * 0.35);
-  ctx.fillStyle = '#991b1b';
-  ctx.fillRect(x + 6, y + h - 12, 10, 8);
-  ctx.fillRect(x + w - 16, y + h - 12, 10, 8);
-}
 
 export default function CarRunnerGame() {
   const { reportScore, saveState } = useGameSession(GAME_ID);
@@ -64,10 +36,20 @@ export default function CarRunnerGame() {
     alive: true,
     crashes: 0,
     invuln: 0,
+    roadScroll: 0,
   });
 
   const reset = useCallback(() => {
-    game.current = { lane: 1, cars: [], t: 0, speed: 4, alive: true, crashes: 0, invuln: 0 };
+    game.current = {
+      lane: 1,
+      cars: [],
+      t: 0,
+      speed: 4,
+      alive: true,
+      crashes: 0,
+      invuln: 0,
+      roadScroll: 0,
+    };
     setScore(0);
     setOver(false);
     setCrashTotal(0);
@@ -126,6 +108,11 @@ export default function CarRunnerGame() {
           const c = g.cars[idx];
           if (c.lane === g.lane && c.y + 40 > py && c.y < py + 40) {
             playCrash();
+            const rect = canvas.getBoundingClientRect();
+            void confettiSpark({
+              x: (rect.left + rect.width / 2) / window.innerWidth,
+              y: (rect.top + rect.height * 0.55) / window.innerHeight,
+            });
             setFlash(true);
             window.setTimeout(() => setFlash(false), 120);
             g.crashes += 1;
@@ -155,16 +142,18 @@ export default function CarRunnerGame() {
           return ns;
         });
       }
-      ctx.fillStyle = '#0c0c12';
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = '#27272a';
-      for (let i = 0; i < LANES; i++) {
-        ctx.fillRect((w / LANES) * i + 2, 0, w / LANES - 4, h);
+      g.roadScroll += g.speed * 1.15;
+      drawRoadScene(ctx, w, h, g.roadScroll, LANES);
+      drawStylizedCar(ctx, px, py, 40, 40, '#ca8a04', '#fde047');
+      if (g.invuln > 0 && g.t % 6 < 3) {
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        drawStylizedCar(ctx, px, py, 40, 40, '#ca8a04', '#fde047');
+        ctx.restore();
       }
-      drawPlayerCar(ctx, px, py, 40, 40);
       for (const c of g.cars) {
         const cx = (w / LANES) * (c.lane + 0.5) - 20;
-        drawEnemyCar(ctx, cx, c.y, 40, 40);
+        drawStylizedCar(ctx, cx, c.y, 40, 40, '#dc2626', '#991b1b');
       }
       raf = requestAnimationFrame(loop);
     };
@@ -176,24 +165,26 @@ export default function CarRunnerGame() {
     <GameShell
       gameId={GAME_ID}
       title="Car Runner"
+      hud={
+        <>
+          <span className={poki.hudStat}>
+            Score <span className="text-[#FF8A65]">{score}</span>
+          </span>
+          <span className={poki.hudStat}>
+            Lives <span className="text-[#5DADE2]">{remainingLives}</span>
+          </span>
+          <span className={poki.hudStat}>
+            Crashes <span className="text-slate-500 dark:text-slate-400">{crashTotal}</span>
+          </span>
+        </>
+      }
       actions={
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            Score: <span className="text-[#FF8A65]">{score}</span>
-          </span>
-          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            Crashes: {crashTotal}/{MAX_CRASHES}
-          </span>
-          <PlayfulButton variant="secondary" className="!py-2 !px-5 !text-sm" onClick={reset}>
-            <RotateCcw className="h-4 w-4" />
-            Restart
-          </PlayfulButton>
-        </div>
+        <PlayfulButton variant="secondary" className="!rounded-2xl !py-2.5 !px-6 !text-sm" onClick={reset}>
+          <RotateCcw className="h-4 w-4" />
+          Restart
+        </PlayfulButton>
       }
     >
-      <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
-        Arrows or lane buttons — dodge red cars. Three crashes end the run.
-      </p>
       <motion.div
         animate={flash ? { x: [-6, 6, -6, 6, 0] } : {}}
         transition={{ duration: 0.2 }}

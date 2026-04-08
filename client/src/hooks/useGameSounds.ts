@@ -52,5 +52,37 @@ export function useGameSounds() {
     });
   }, [getAc]);
 
-  return { playDice, playCrash, playWin };
+  const playPop = useCallback(() => {
+    const ac = getAc();
+    if (!ac) return;
+    if (ac.state === 'suspended') void ac.resume();
+    beep(ac, 520, 0.04, 'sine', 0.09);
+    window.setTimeout(() => beep(ac, 380, 0.05, 'sine', 0.06), 35);
+  }, [getAc]);
+
+  const playMatch = useCallback(() => {
+    const ac = getAc();
+    if (!ac) return;
+    if (ac.state === 'suspended') void ac.resume();
+    [660, 880, 990].forEach((f, i) => {
+      window.setTimeout(() => beep(ac, f, 0.06, 'triangle', 0.065), i * 45);
+    });
+  }, [getAc]);
+
+  const playSparkle = useCallback(() => {
+    const ac = getAc();
+    if (!ac) return;
+    if (ac.state === 'suspended') void ac.resume();
+    beep(ac, 1200, 0.03, 'sine', 0.05);
+    window.setTimeout(() => beep(ac, 1600, 0.04, 'sine', 0.04), 40);
+  }, [getAc]);
+
+  const playJump = useCallback(() => {
+    const ac = getAc();
+    if (!ac) return;
+    if (ac.state === 'suspended') void ac.resume();
+    beep(ac, 340, 0.06, 'square', 0.07);
+  }, [getAc]);
+
+  return { playDice, playCrash, playWin, playPop, playMatch, playSparkle, playJump };
 }

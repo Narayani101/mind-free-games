@@ -5,6 +5,8 @@ import { useGameSounds } from '@/hooks/useGameSounds';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
 import { Dice5 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { poki } from '@/theme/pokiGameTheme';
+import { confettiCelebration } from '@/utils/gameFx';
 
 const GAME_ID = 'dice-game';
 const ROUNDS = 5;
@@ -140,7 +142,10 @@ export default function DiceGame() {
           saveState({ done: true, win }, { status: 'completed' });
           setDone(true);
           setSummary({ pts, win });
-          if (win) playWin();
+          if (win) {
+            playWin();
+            void confettiCelebration(0.5);
+          }
         }
       }
     }, 42);
@@ -161,10 +166,18 @@ export default function DiceGame() {
     <GameShell
       gameId={GAME_ID}
       title="Dice Game"
-      actions={
-        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-          Rolls {Math.min(rolls, ROUNDS)}/{ROUNDS}
-        </span>
+      hud={
+        <>
+          <span className={poki.hudStat}>
+            Rolls <span className="text-[#5DADE2]">{Math.min(rolls, ROUNDS)}/{ROUNDS}</span>
+          </span>
+          <span className={poki.hudStat}>
+            Target <span className="text-[#FF8A65]">{target}</span>
+          </span>
+          <span className={poki.hudStat}>
+            Total <span className="font-mono text-slate-800 dark:text-white">{total}</span>
+          </span>
+        </>
       }
       resultModal={
         summary
@@ -181,10 +194,6 @@ export default function DiceGame() {
           : undefined
       }
     >
-      <p className="mb-4 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
-        Beat the house: roll two dice {ROUNDS} times. Your sum should reach at least{' '}
-        <span className="font-mono font-bold text-[#FF8A65]">{target}</span>.
-      </p>
       <div className="mb-6 flex flex-wrap items-center justify-center gap-8 perspective-[800px]">
         <DiceFace value={faceA} rolling={rolling} />
         <DiceFace value={faceB} rolling={rolling} />

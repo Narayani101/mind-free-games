@@ -2,6 +2,9 @@ import { useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameShell } from '@/components/GameShell';
 import { useGameSession } from '@/hooks/useGameSession';
+import { useGameSounds } from '@/hooks/useGameSounds';
+import { confettiMatchBurst } from '@/utils/gameFx';
+import { poki } from '@/theme/pokiGameTheme';
 
 const GAME_ID = 'match-3';
 const N = 8;
@@ -42,6 +45,7 @@ const colors = ['#f43f5e', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#f97316'
 
 export default function Match3Game() {
   const { reportScore, saveState } = useGameSession(GAME_ID);
+  const { playMatch } = useGameSounds();
   const [grid, setGrid] = useState(() => gen());
   const [picked, setPicked] = useState<{ r: number; c: number } | null>(null);
   const [score, setScore] = useState(0);
@@ -84,6 +88,8 @@ export default function Match3Game() {
       }
       setGrid(cur);
       if (total) {
+        playMatch();
+        void confettiMatchBurst();
         setScore((s) => {
           const ns = s + total;
           void reportScore(ns);
@@ -95,7 +101,7 @@ export default function Match3Game() {
         window.setTimeout(() => setFloatScore(null), 900);
       }
     },
-    [reportScore, saveState]
+    [reportScore, saveState, playMatch]
   );
 
   const tap = (r: number, c: number) => {
@@ -122,13 +128,15 @@ export default function Match3Game() {
     <GameShell
       gameId={GAME_ID}
       title="Match-3"
-      actions={<span className="text-sm font-bold text-slate-600 dark:text-slate-300">Score: {score}</span>}
+      hud={
+        <>
+          <span className={poki.hudStat}>
+            Score <span className="text-[#22C55E]">{score}</span>
+          </span>
+          <span className={poki.hudStat}>8×8 grid</span>
+        </>
+      }
     >
-      <div className="relative mb-3 rounded-[14px] border border-slate-200/80 bg-gradient-to-r from-[#FFF4E6] to-[#E8F8F5] p-3 text-xs font-semibold text-slate-700 dark:border-slate-600 dark:from-slate-800 dark:to-slate-900 dark:text-slate-200 sm:text-sm">
-        <strong className="text-[#FF6B6B]">How to play:</strong> swap two <strong>adjacent</strong> candies (tap one,
-        then a neighbor). Match <strong>3 or more</strong> in a row or column. Matches <strong>pop</strong>, then new
-        candies <strong>fall</strong> in from the top.
-      </div>
       <div className="relative mx-auto inline-block">
         <AnimatePresence>
           {floatScore && (
@@ -144,7 +152,7 @@ export default function Match3Game() {
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="inline-block rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-[#F8F9FF] to-[#E8F7FF] p-1.5 shadow-inner dark:border-slate-600 dark:from-slate-900 dark:to-slate-800">
+        <div className="inline-block rounded-[20px] border-2 border-white/80 bg-gradient-to-br from-[#fff7ed] via-[#fce7f3] to-[#e0f2fe] p-2 shadow-[0_12px_40px_rgba(99,102,241,0.15)] dark:border-slate-600 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
           {grid.map((row, r) => (
             <div key={r} className="flex">
               {row.map((cell, c) => {
@@ -168,12 +176,15 @@ export default function Match3Game() {
                     }
                     transition={{ duration: popping ? 0.25 : 0.22 }}
                     onClick={() => tap(r, c)}
-                    className={`m-0.5 flex h-8 w-8 items-center justify-center rounded-xl border-2 border-white/80 text-lg shadow-sm sm:h-9 sm:w-9 ${
-                      isPick ? 'ring-2 ring-[#FF8A65] ring-offset-1 dark:ring-[#38BDF8]' : ''
+                    className={`m-0.5 flex h-9 w-9 items-center justify-center rounded-2xl border-2 border-white/90 text-lg shadow-[0_6px_14px_rgba(15,23,42,0.12)] transition-shadow sm:h-10 sm:w-10 ${
+                      isPick ? 'ring-2 ring-[#FF8A65] ring-offset-2 ring-offset-white dark:ring-[#38BDF8] dark:ring-offset-slate-900' : ''
                     }`}
-                    style={{ background: colors[cell % TYPES] }}
+                    style={{
+                      background: `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.35) 18%, ${colors[cell % TYPES]} 45%, ${colors[cell % TYPES]} 100%)`,
+                      boxShadow: 'inset 0 -4px 8px rgba(0,0,0,0.12), inset 0 2px 6px rgba(255,255,255,0.35)',
+                    }}
                   >
-                    <span className="select-none drop-shadow-sm">{CANDY_IMG[cell % TYPES]}</span>
+                    <span className="select-none drop-shadow-md">{CANDY_IMG[cell % TYPES]}</span>
                   </motion.button>
                 );
               })}

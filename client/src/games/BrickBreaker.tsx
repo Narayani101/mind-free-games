@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameShell } from '@/components/GameShell';
 import { useGameSession } from '@/hooks/useGameSession';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
+import { poki } from '@/theme/pokiGameTheme';
 
 const GAME_ID = 'brick-breaker';
 
@@ -170,16 +171,18 @@ export default function BrickBreakerGame() {
     <GameShell
       gameId={GAME_ID}
       title="Brick Breaker"
-      actions={
-        <div className="flex flex-wrap items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-200">
-          <span>
-            Score: <span className="font-mono text-[#5DADE2] dark:text-[#38BDF8]">{ui.score}</span>
+      hud={
+        <>
+          <span className={poki.hudStat}>
+            Score <span className="font-mono text-[#5DADE2] dark:text-[#38BDF8]">{ui.score}</span>
           </span>
-          <span>Lives: {ui.lives}</span>
-          <PlayfulButton variant="secondary" className="!py-2 !px-4 !text-sm" type="button" onClick={reset}>
-            Reset
-          </PlayfulButton>
-        </div>
+          <span className={poki.hudStat}>Lives {ui.lives}</span>
+        </>
+      }
+      actions={
+        <PlayfulButton variant="secondary" className="!rounded-2xl !py-2.5 !px-6 !text-sm" type="button" onClick={reset}>
+          Reset
+        </PlayfulButton>
       }
       resultModal={
         ui.won
@@ -203,9 +206,6 @@ export default function BrickBreakerGame() {
             : undefined
       }
     >
-      <p className="mb-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
-        Drag on the game (or move the mouse) to steer the paddle.
-      </p>
       <canvas
         ref={canvasRef}
         width={480}

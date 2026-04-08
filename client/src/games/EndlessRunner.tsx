@@ -6,49 +6,74 @@ import { useGameSession } from '@/hooks/useGameSession';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { PlayfulButton } from '@/components/ui/PlayfulButton';
 import { RotateCcw } from 'lucide-react';
+import { poki } from '@/theme/pokiGameTheme';
 
 const GAME_ID = 'endless-runner';
 
 function drawRunner(ctx: CanvasRenderingContext2D, px: number, py: number, pw: number, ph: number) {
   const cx = px + pw / 2;
-  const headR = 7;
-  ctx.fillStyle = '#38bdf8';
+  const headR = 8;
+  const hy = py + headR + 2;
+  const hg = ctx.createRadialGradient(cx - 2, hy - 2, 1, cx, hy, headR);
+  hg.addColorStop(0, '#fef9c3');
+  hg.addColorStop(0.4, '#fde047');
+  hg.addColorStop(1, '#ca8a04');
+  ctx.fillStyle = hg;
   ctx.beginPath();
-  ctx.arc(cx, py + headR + 2, headR, 0, Math.PI * 2);
+  ctx.arc(cx, hy, headR, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = '#0ea5e9';
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
   ctx.lineWidth = 2;
   ctx.stroke();
+  const shirt = ctx.createLinearGradient(px, py + headR * 2, px + pw, py + ph);
+  shirt.addColorStop(0, '#38bdf8');
+  shirt.addColorStop(1, '#1d4ed8');
   ctx.strokeStyle = '#0c4a6e';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 3.5;
   ctx.beginPath();
   ctx.moveTo(cx, py + headR * 2 + 2);
   ctx.lineTo(cx, py + ph - 10);
   ctx.stroke();
+  ctx.strokeStyle = '#172554';
   ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(cx, py + headR * 2 + 10);
-  ctx.lineTo(px + 6, py + ph - 4);
+  ctx.lineTo(px + 5, py + ph - 4);
   ctx.moveTo(cx, py + headR * 2 + 10);
-  ctx.lineTo(px + pw - 6, py + ph - 4);
+  ctx.lineTo(px + pw - 5, py + ph - 4);
   ctx.stroke();
-  ctx.fillStyle = '#0369a1';
-  ctx.fillRect(px + 4, py + ph - 8, 8, 5);
-  ctx.fillRect(px + pw - 12, py + ph - 8, 8, 5);
+  ctx.fillStyle = shirt;
+  ctx.fillRect(px + 6, py + headR * 2 + 4, pw - 12, ph - headR * 2 - 18);
+  ctx.fillStyle = '#1e3a8a';
+  ctx.fillRect(px + 4, py + ph - 9, 9, 6);
+  ctx.fillRect(px + pw - 13, py + ph - 9, 9, 6);
 }
 
 function drawObstacle(ctx: CanvasRenderingContext2D, x: number, groundY: number) {
-  const y = groundY - 26;
-  ctx.fillStyle = '#c2410c';
-  ctx.fillRect(x, y, 22, 26);
-  ctx.strokeStyle = '#7c2d12';
+  const y = groundY - 28;
+  const w = 24;
+  const h = 28;
+  const rg = ctx.createLinearGradient(x, y, x + w, y + h);
+  rg.addColorStop(0, '#fb923c');
+  rg.addColorStop(0.5, '#ea580c');
+  rg.addColorStop(1, '#9a3412');
+  ctx.fillStyle = rg;
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y + h);
+  ctx.lineTo(x + w - 4, y + h);
+  ctx.lineTo(x + w - 2, y + 6);
+  ctx.lineTo(x + w / 2, y);
+  ctx.lineTo(x + 2, y + 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 2;
-  ctx.strokeRect(x + 1, y + 1, 20, 24);
+  ctx.stroke();
 }
 
 export default function EndlessRunnerGame() {
   const { reportScore, saveState } = useGameSession(GAME_ID);
-  const { playCrash } = useGameSounds();
+  const { playCrash, playJump } = useGameSounds();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
@@ -79,8 +104,9 @@ export default function EndlessRunnerGame() {
     if (game.current.grounded && game.current.alive) {
       game.current.vy = -12;
       game.current.grounded = false;
+      playJump();
     }
-  }, []);
+  }, [playJump]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -122,7 +148,8 @@ export default function EndlessRunnerGame() {
       const px = 60;
       const pw = 40;
       const ph = 40;
-      const py = ground + g.y;
+      /* Feet on the ground line: py is top of sprite, so baseline ≈ py + ph (g.y ≤ 0 = jump upward). */
+      const py = ground - ph + g.y;
       for (const o of g.obs) {
         o.x -= g.speed;
         if (o.x < px + pw && o.x + 20 > px && py + ph > ground - 24 && py < ground) {
@@ -143,17 +170,32 @@ export default function EndlessRunnerGame() {
         });
       }
       const sky = ctx.createLinearGradient(0, 0, 0, ground);
-      sky.addColorStop(0, '#e0f2fe');
-      sky.addColorStop(1, '#bae6fd');
+      sky.addColorStop(0, '#7dd3fc');
+      sky.addColorStop(0.55, '#bae6fd');
+      sky.addColorStop(1, '#e0f2fe');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, ground);
-      ctx.fillStyle = '#86efac';
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      for (let i = 0; i < 4; i++) {
+        const cx = ((g.t * 0.4 + i * 140) % (w + 80)) - 40;
+        const cy = 28 + (i % 3) * 22;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 28, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const grass = ctx.createLinearGradient(0, ground, 0, h);
+      grass.addColorStop(0, '#4ade80');
+      grass.addColorStop(1, '#166534');
+      ctx.fillStyle = grass;
       ctx.fillRect(0, ground, w, h - ground);
-      ctx.fillStyle = '#22c55e';
-      ctx.fillRect(0, ground, w, 4);
-      drawRunner(ctx, px, py, pw, ph);
-      ctx.fillStyle = '#f97316';
+      ctx.fillStyle = '#15803d';
+      ctx.fillRect(0, ground, w, 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      for (let x = (g.t * 2) % 40; x < w + 40; x += 40) {
+        ctx.fillRect(x - 40, ground + 8, 18, 3);
+      }
       for (const o of g.obs) drawObstacle(ctx, o.x, ground);
+      drawRunner(ctx, px, py, pw, ph);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -164,16 +206,16 @@ export default function EndlessRunnerGame() {
     <GameShell
       gameId={GAME_ID}
       title="Endless Runner"
+      hud={
+        <span className={poki.hudStat}>
+          Score <span className="text-[#FF8A65]">{score}</span>
+        </span>
+      }
       actions={
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            Score: <span className="text-[#FF8A65]">{score}</span>
-          </span>
-          <PlayfulButton variant="secondary" className="!py-2 !px-5 !text-sm" onClick={reset}>
-            <RotateCcw className="h-4 w-4" />
-            Restart
-          </PlayfulButton>
-        </div>
+        <PlayfulButton variant="secondary" className="!rounded-2xl !py-2.5 !px-6 !text-sm" onClick={reset}>
+          <RotateCcw className="h-4 w-4" />
+          Restart
+        </PlayfulButton>
       }
       resultModal={
         over
@@ -188,9 +230,6 @@ export default function EndlessRunnerGame() {
           : undefined
       }
     >
-      <p className="mb-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 sm:text-sm">
-        Space, tap game, or Jump — avoid orange blocks.
-      </p>
       <motion.div
         animate={flash ? { x: [-5, 5, -5, 5, 0] } : {}}
         transition={{ duration: 0.18 }}

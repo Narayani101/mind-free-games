@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameShell } from '@/components/GameShell';
 import { useGameSession } from '@/hooks/useGameSession';
+import { useGameSounds } from '@/hooks/useGameSounds';
+import { drawGlossyBubble, drawSkyBackdrop } from '@/games/canvas/pokiCanvasDraw';
+import { confettiMatchBurst } from '@/utils/gameFx';
+import { poki } from '@/theme/pokiGameTheme';
 
 const GAME_ID = 'bubble-shooter';
 const COLS = 8;
@@ -95,6 +99,7 @@ function neighbors4(r: number, c: number): [number, number][] {
 
 export default function BubbleShooterGame() {
   const { reportScore, saveState } = useGameSession(GAME_ID);
+  const { playPop } = useGameSounds();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
@@ -188,6 +193,8 @@ export default function BubbleShooterGame() {
       const cl = cluster(s.grid, gr, gc, color);
       let ns = scoreRef.current;
       if (cl.size >= 3) {
+        playPop();
+        void confettiMatchBurst();
         cl.forEach((k) => {
           const [y, x] = k.split(',').map(Number);
           const colIdx = s.grid[y][x]!;
@@ -264,11 +271,7 @@ export default function BubbleShooterGame() {
       s.originY = 32;
 
       ctx.clearRect(0, 0, width, height);
-      const g = ctx.createLinearGradient(0, 0, width, height);
-      g.addColorStop(0, '#0f172a');
-      g.addColorStop(1, '#1e293b');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, width, height);
+      drawSkyBackdrop(ctx, width, height);
 
       const sx = width / 2;
       const sy = height - 28;
@@ -288,22 +291,13 @@ export default function BubbleShooterGame() {
           const col = s.grid[r][c];
           if (col === null) continue;
           const { x, y } = gridCenter(c, r, s.originX, s.originY, s.cell);
-          ctx.beginPath();
-          ctx.fillStyle = COLORS[col];
-          ctx.arc(x, y, bubbleR, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
+          drawGlossyBubble(ctx, x, y, bubbleR, COLORS[col]);
         }
       }
 
       for (const b of s.animBubbles) {
-        ctx.beginPath();
         ctx.globalAlpha = Math.max(0, b.life);
-        ctx.fillStyle = COLORS[b.color];
-        ctx.arc(b.x, b.y, bubbleR * 0.85, 0, Math.PI * 2);
-        ctx.fill();
+        drawGlossyBubble(ctx, b.x, b.y, bubbleR * 0.85, COLORS[b.color]);
         ctx.globalAlpha = 1;
       }
 
@@ -369,31 +363,22 @@ export default function BubbleShooterGame() {
           }
         }
         if (s.proj) {
-          ctx.beginPath();
-          ctx.fillStyle = COLORS[s.proj.color];
-          ctx.arc(s.proj.x, s.proj.y, bubbleR, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-          ctx.stroke();
+          drawGlossyBubble(ctx, s.proj.x, s.proj.y, bubbleR, COLORS[s.proj.color]);
         }
       }
 
-      ctx.beginPath();
-      ctx.fillStyle = COLORS[s.currentColor];
-      ctx.arc(sx, sy, bubbleR + 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
+      drawGlossyBubble(ctx, sx, sy, bubbleR + 2, COLORS[s.currentColor]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
       ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(sx, sy, bubbleR + 2, 0, Math.PI * 2);
       ctx.stroke();
 
       const nx = sx + 52;
       ctx.font = 'bold 11px system-ui,sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.fillText('Next', nx - 8, sy - 18);
-      ctx.beginPath();
-      ctx.fillStyle = COLORS[s.nextColor];
-      ctx.arc(nx, sy, bubbleR - 2, 0, Math.PI * 2);
-      ctx.fill();
+      drawGlossyBubble(ctx, nx, sy, bubbleR - 1, COLORS[s.nextColor]);
 
       s.animBubbles = s.animBubbles
         .map((b) => ({ ...b, y: b.y + b.vy, life: b.life - 0.04 }))
@@ -408,7 +393,7 @@ export default function BubbleShooterGame() {
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerdown', onDown);
     };
-  }, [reportScore, saveState]);
+  }, [reportScore, saveState, playPop]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -430,16 +415,12 @@ export default function BubbleShooterGame() {
     <GameShell
       gameId={GAME_ID}
       title="Bubble Shooter"
-      actions={
-        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-          Score: <span className="font-mono text-[#FF8A65]">{score}</span>
+      hud={
+        <span className={poki.hudStat}>
+          Score <span className="font-mono text-[#FF8A65]">{score}</span>
         </span>
       }
     >
-      <p className="mb-2 text-xs font-semibold text-slate-600 dark:text-slate-400 sm:text-sm">
-        Bubbles hang from the top. Aim from the bottom — drag or move to aim, tap to shoot. Match 3+ of the
-        same color to burst them. Orphans fall with a little bounce off the walls.
-      </p>
       <div ref={wrapRef} className="mx-auto w-full max-w-[420px]">
         <canvas ref={canvasRef} className="game-canvas w-full touch-none rounded-2xl border-2 border-slate-200 dark:border-slate-600" />
       </div>
